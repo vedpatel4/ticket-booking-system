@@ -19,49 +19,48 @@ export class BookingSystem {
     }
 
     async createBooking(customerName: string, ticketId: string): Promise<Booking | null> {
-        // 1. Start a new session (like opening a new tab in your banking app)
-        const session = await mongoose.startSession();
+        // Quick check first - if ticket is already booked, fail fast
+        const isTicketBooked = await TicketModel.exists({ ticketId, isBooked: true });
+        if (isTicketBooked) {
+            return null; // Fail fast if ticket is already booked
+        }
 
-        // Wait for 10 seconds to simulate a slow operation
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        
+        const session = await mongoose.startSession();
         try {
-            // 2. Start a transaction (like starting a money transfer)
             await session.startTransaction();
 
-            // 3. First operation: Find and mark ticket as booked
+            // Add artificial delay only if ticket might be available
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
             const ticket = await TicketModel.findOneAndUpdate(
-                { ticketId, isBooked: false },  // Find available ticket
-                { isBooked: true },             // Mark it as booked
-                { session, new: true }          // Use this session, return updated doc
+                { ticketId, isBooked: false },
+                { isBooked: true },
+                { session, new: true }
             );
 
             if (!ticket) {
-                // 4a. If ticket not found/already booked, cancel everything
                 await session.abortTransaction();
                 return null;
             }
 
-            // 5. Second operation: Create booking record
             const bookingId = `B-${uuidv4()}`;
             const newBooking = await BookingModel.create([{
                 bookingId,
                 customerName,
                 tickets: [ticket._id],
                 totalAmount: ticket.price
-            }], { session });  // Use same session
+            }], { session });
 
-            // 6. If everything is successful, commit the transaction
             await session.commitTransaction();
             
-            return new Booking(bookingId, customerName);
+            const booking = new Booking(bookingId, customerName);
+            booking.addTicket(new Ticket(ticket.ticketId, ticket.type as TicketType, ticket.price));
+            return booking;
 
         } catch (error) {
-            // 4b. If any error occurs, cancel everything
             await session.abortTransaction();
             throw error;
         } finally {
-            // 7. Always close the session
             session.endSession();
         }
     }
