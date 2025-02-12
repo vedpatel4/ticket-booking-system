@@ -27,21 +27,39 @@ export class TicketController {
 
     createTickets = async (req: Request, res: Response) => {
         try {
-            const { rows, columns, vipRows = 0, regularRows = 0 } = req.body;
+            const { rows, columns, vipRows, regularRows, prices } = req.body;
             
-            if (!rows || !columns) {
+            if (!rows || !columns || !vipRows || !regularRows || !prices) {
                 return res.status(400).json({ 
-                    message: 'Both rows and columns are required' 
+                    message: 'Rows, columns, vipRows, regularRows, and prices are required' 
                 });
             }
 
-            if (rows <= 0 || columns <= 0) {
+            if (!prices.VIP || !prices.REGULAR || !prices.ECONOMY) {
                 return res.status(400).json({ 
-                    message: 'Rows and columns must be positive numbers' 
+                    message: 'Prices must be specified for all ticket types (VIP, REGULAR, ECONOMY)' 
                 });
             }
 
-            const tickets = await this.bookingSystem.createTickets(rows, columns, vipRows, regularRows);
+            if (rows <= 0 || columns <= 0 || vipRows < 0 || regularRows < 0) {
+                return res.status(400).json({ 
+                    message: 'Row and column values must be positive numbers' 
+                });
+            }
+
+            if (vipRows + regularRows > rows) {
+                return res.status(400).json({
+                    message: 'Sum of VIP and regular rows cannot exceed total rows'
+                });
+            }
+
+            const tickets = await this.bookingSystem.createTickets(
+                rows, 
+                columns, 
+                vipRows, 
+                regularRows,
+                prices
+            );
             res.status(201).json(tickets);
         } catch (error) {
             console.error('Controller Error:', error);
