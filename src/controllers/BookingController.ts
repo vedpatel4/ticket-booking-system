@@ -41,4 +41,35 @@ export class BookingController {
             res.status(500).json({ message: 'Error creating booking', error });
         }
     };
+
+    createTickets = async (req: Request, res: Response) => {
+        try {
+            const { rows, columns, vipRows, regularRows } = req.body;
+            
+            // Validate input
+            if (!rows || !columns || !vipRows || !regularRows) {
+                return res.status(400).json({ 
+                    message: 'Total rows, columns, VIP rows, and regular rows are required' 
+                });
+            }
+
+            // Validate that rows add up correctly
+            if (vipRows + regularRows > rows) {
+                return res.status(400).json({ 
+                    message: 'Sum of VIP and regular rows cannot exceed total rows' 
+                });
+            }
+
+            const tickets = await this.bookingSystem.createTickets(
+                rows, 
+                columns, 
+                vipRows, 
+                regularRows
+            );
+            
+            res.status(201).json(tickets);
+        } catch (error) {
+            res.status(500).json({ message: 'Error creating tickets', error });
+        }
+    };
 } 

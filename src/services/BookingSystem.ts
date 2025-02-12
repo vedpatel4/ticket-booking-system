@@ -19,12 +19,70 @@ export class BookingSystem {
         return tickets.map(ticket => new Ticket(ticket.ticketId, ticket.type as TicketType, ticket.price));
     }
 
+    async createTickets(
+        rows: number, 
+        columns: number, 
+        vipRows: number, 
+        regularRows: number
+    ): Promise<Ticket[]> {
+        try {
+            const tickets: Ticket[] = [];
+            let currentRow = 1;
+
+            // Create VIP tickets
+            for (let row = currentRow; row < currentRow + vipRows; row++) {
+                for (let col = 1; col <= columns; col++) {
+                    const ticketId = `T${row.toString().padStart(2, '0')}${col.toString().padStart(2, '0')}`;
+                    const ticket = await TicketModel.create({
+                        ticketId,
+                        type: TicketType.VIP,
+                        isBooked: false
+                    });
+                    tickets.push(new Ticket(ticket.ticketId, ticket.type as TicketType, ticket.price));
+                }
+            }
+            currentRow += vipRows;
+
+            // Create Regular tickets
+            for (let row = currentRow; row < currentRow + regularRows; row++) {
+                for (let col = 1; col <= columns; col++) {
+                    const ticketId = `T${row.toString().padStart(2, '0')}${col.toString().padStart(2, '0')}`;
+                    const ticket = await TicketModel.create({
+                        ticketId,
+                        type: TicketType.REGULAR,
+                        isBooked: false
+                    });
+                    tickets.push(new Ticket(ticket.ticketId, ticket.type as TicketType, ticket.price));
+                }
+            }
+            currentRow += regularRows;
+
+            // Create Economy tickets (remaining rows)
+            const economyRows = rows - vipRows - regularRows;
+            for (let row = currentRow; row < currentRow + economyRows; row++) {
+                for (let col = 1; col <= columns; col++) {
+                    const ticketId = `T${row.toString().padStart(2, '0')}${col.toString().padStart(2, '0')}`;
+                    const ticket = await TicketModel.create({
+                        ticketId,
+                        type: TicketType.ECONOMY,
+                        isBooked: false
+                    });
+                    tickets.push(new Ticket(ticket.ticketId, ticket.type as TicketType, ticket.price));
+                }
+            }
+
+            return tickets;
+        } catch (error) {
+            console.error('BookingSystem Error:', error);
+            throw error;
+        }
+    }
+
     async createBooking(customerName: string, ticketId: string): Promise<Booking | null> {
         const session = await mongoose.startSession();
         try {
             session.startTransaction();
 
-            // First find and mark the ticket
             const ticket = await TicketModel.findOneAndUpdate(
                 { ticketId, isBooked: false },
                 { isBooked: true },
@@ -36,10 +94,8 @@ export class BookingSystem {
                 return null;
             }
 
-            // Add delay here to simulate user taking time
             await setTimeout(10000);  // 10 seconds delay
 
-            // Continue with booking creation
             const bookingId = `B-${uuidv4()}`;
             await BookingModel.create([{
                 bookingId,
@@ -81,24 +137,5 @@ export class BookingSystem {
             newBooking.addTicket(newTicket);
         });
         return newBooking;
-    }
-
-    async createTicket(type: string): Promise<Ticket> {
-        try {
-            const ticketId = `T-${uuidv4()}`;
-            console.log('Creating ticket with:', { ticketId, type });
-            
-            const ticket = await TicketModel.create({
-                ticketId,
-                type,
-                isBooked: false
-            });
-            
-            console.log('Ticket created:', ticket);
-            return new Ticket(ticket.ticketId, ticket.type as TicketType, ticket.price);
-        } catch (error) {
-            console.error('BookingSystem Error:', error);
-            throw error;
-        }
     }
 } 

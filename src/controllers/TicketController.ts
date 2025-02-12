@@ -1,10 +1,8 @@
 import { Request, Response } from 'express';
 import { BookingSystem } from '../services/BookingSystem';
-import { TicketType } from '../enums/TicketType';
 
 export class TicketController {
     private bookingSystem: BookingSystem;
-
     constructor() {
         this.bookingSystem = new BookingSystem();
     }
@@ -27,25 +25,28 @@ export class TicketController {
         }
     };
 
-    createTicket = async (req: Request, res: Response) => {
+    createTickets = async (req: Request, res: Response) => {
         try {
-            const { type } = req.body;
-            if (!type) {
-                return res.status(400).json({ message: 'Ticket type is required' });
-            }
+            const { rows, columns, vipRows = 0, regularRows = 0 } = req.body;
             
-            if (!Object.values(TicketType).includes(type)) {
+            if (!rows || !columns) {
                 return res.status(400).json({ 
-                    message: `Invalid ticket type. Must be one of: ${Object.values(TicketType).join(', ')}`
+                    message: 'Both rows and columns are required' 
                 });
             }
 
-            const ticket = await this.bookingSystem.createTicket(type);
-            res.status(201).json(ticket);
+            if (rows <= 0 || columns <= 0) {
+                return res.status(400).json({ 
+                    message: 'Rows and columns must be positive numbers' 
+                });
+            }
+
+            const tickets = await this.bookingSystem.createTickets(rows, columns, vipRows, regularRows);
+            res.status(201).json(tickets);
         } catch (error) {
             console.error('Controller Error:', error);
             res.status(500).json({ 
-                message: 'Error creating ticket',
+                message: 'Error creating tickets',
                 error: (error as Error).message
             });
         }
