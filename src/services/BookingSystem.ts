@@ -6,6 +6,7 @@ import { TicketModel } from '../models/schemas/TicketSchema';
 import { BookingModel } from '../models/schemas/BookingSchema';
 import { v4 as uuidv4 } from 'uuid';
 import mongoose from 'mongoose';
+import { setTimeout } from 'timers/promises';
 
 export class BookingSystem {
     async getAvailableTickets(): Promise<ITicket[]> {
@@ -19,19 +20,11 @@ export class BookingSystem {
     }
 
     async createBooking(customerName: string, ticketId: string): Promise<Booking | null> {
-        // Quick check first - if ticket is already booked, fail fast
-        const isTicketBooked = await TicketModel.exists({ ticketId, isBooked: true });
-        if (isTicketBooked) {
-            return null; // Fail fast if ticket is already booked
-        }
-
         const session = await mongoose.startSession();
         try {
             await session.startTransaction();
 
-            // Add artificial delay only if ticket might be available
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
+            // First find and mark the ticket
             const ticket = await TicketModel.findOneAndUpdate(
                 { ticketId, isBooked: false },
                 { isBooked: true },
@@ -43,8 +36,12 @@ export class BookingSystem {
                 return null;
             }
 
+            // Add delay here to simulate user taking time
+            await setTimeout(10000);  // 10 seconds delay
+
+            // Continue with booking creation
             const bookingId = `B-${uuidv4()}`;
-            const newBooking = await BookingModel.create([{
+            await BookingModel.create([{
                 bookingId,
                 customerName,
                 tickets: [ticket._id],
@@ -52,10 +49,7 @@ export class BookingSystem {
             }], { session });
 
             await session.commitTransaction();
-            
-            const booking = new Booking(bookingId, customerName);
-            booking.addTicket(new Ticket(ticket.ticketId, ticket.type as TicketType, ticket.price));
-            return booking;
+            return new Booking(bookingId, customerName);
 
         } catch (error) {
             await session.abortTransaction();
