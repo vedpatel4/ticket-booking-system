@@ -22,7 +22,7 @@ export class BookingSystem {
     async createBooking(customerName: string, ticketId: string): Promise<Booking | null> {
         const session = await mongoose.startSession();
         try {
-            await session.startTransaction();
+            session.startTransaction();
 
             // First find and mark the ticket
             const ticket = await TicketModel.findOneAndUpdate(
@@ -83,19 +83,21 @@ export class BookingSystem {
         return newBooking;
     }
 
-    async createTicket(type: string, price: number): Promise<Ticket> {
+    async createTicket(type: string): Promise<Ticket> {
         try {
             const ticketId = `T-${uuidv4()}`;
+            console.log('Creating ticket with:', { ticketId, type });
+            
             const ticket = await TicketModel.create({
                 ticketId,
                 type,
-                price,
                 isBooked: false
             });
             
+            console.log('Ticket created:', ticket);
             return new Ticket(ticket.ticketId, ticket.type as TicketType, ticket.price);
         } catch (error) {
-            console.error('Error creating ticket:', error);
+            console.error('BookingSystem Error:', error);
             throw error;
         }
     }

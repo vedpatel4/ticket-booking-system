@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { BookingSystem } from '../services/BookingSystem';
+import { TicketType } from '../enums/TicketType';
 
 export class TicketController {
     private bookingSystem: BookingSystem;
@@ -28,14 +29,25 @@ export class TicketController {
 
     createTicket = async (req: Request, res: Response) => {
         try {
-            const { type, price } = req.body;
-            if (!type || !price) {
-                return res.status(400).json({ message: 'Type and price are required' });
+            const { type } = req.body;
+            if (!type) {
+                return res.status(400).json({ message: 'Ticket type is required' });
             }
-            const ticket = await this.bookingSystem.createTicket(type, price);
+            
+            if (!Object.values(TicketType).includes(type)) {
+                return res.status(400).json({ 
+                    message: `Invalid ticket type. Must be one of: ${Object.values(TicketType).join(', ')}`
+                });
+            }
+
+            const ticket = await this.bookingSystem.createTicket(type);
             res.status(201).json(ticket);
         } catch (error) {
-            res.status(500).json({ message: 'Error creating ticket' });
+            console.error('Controller Error:', error);
+            res.status(500).json({ 
+                message: 'Error creating ticket',
+                error: (error as Error).message
+            });
         }
     };
 } 
