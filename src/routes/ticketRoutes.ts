@@ -13,4 +13,7 @@ router.get('/available', ticketController.getAvailableTickets);
 // GET all tickets
 router.get('/', ticketController.getAllTickets);
 
+// Create a single ticket
+router.post('/', ticketController.createTicket);
+
 export const ticketRoutes = router; 

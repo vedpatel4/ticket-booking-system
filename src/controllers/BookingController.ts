@@ -42,39 +42,27 @@ export class BookingController {
         }
     };
 
-    createTickets = async (req: Request, res: Response) => {
+
+    deleteBooking = async (req: Request, res: Response) => {
         try {
-            const { rows, columns, vipRows, regularRows, prices } = req.body;
-            
-            if (!rows || !columns || !prices) {
-                return res.status(400).json({ 
-                    message: 'Rows, columns, and prices are required' 
-                });
+            const id = req.params.id;
+            const booking = await this.bookingSystem.getBookingById(id);
+            if (!booking) {
+                return res.status(404).json({ message: 'Booking not found' });
             }
+            await this.bookingSystem.deleteBooking(id);
 
-            if (!prices.VIP || !prices.REGULAR || !prices.ECONOMY) {
-                return res.status(400).json({ 
-                    message: 'Prices must be specified for all ticket types (VIP, REGULAR, ECONOMY)' 
-                });
+            if (booking.getTickets().length > 0) {
+                const tickets = booking.getTickets();
+                for (const ticket of tickets) {
+                    ticket.unbook();
+                }
             }
+            res.status(204).json({ message: 'Booking deleted successfully' });
 
-            if (rows <= 0 || columns <= 0) {
-                return res.status(400).json({ 
-                    message: 'Rows and columns must be positive numbers' 
-                });
-            }
-
-            const tickets = await this.bookingSystem.createTickets(
-                rows, 
-                columns, 
-                vipRows || 0, 
-                regularRows || 0,
-                prices
-            );
-            
-            res.status(201).json(tickets);
         } catch (error) {
-            res.status(500).json({ message: 'Error creating tickets', error });
+            res.status(500).json({ message: 'Error deleting booking', error });
         }
     };
+    
 } 

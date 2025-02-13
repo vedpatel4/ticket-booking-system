@@ -6,4 +6,5 @@ export interface ITicket {
     getPrice(): number;
     isAvailable(): boolean;
     book(): boolean;
+    unbook(): boolean;
 }

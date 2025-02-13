@@ -37,4 +37,12 @@ export class Ticket implements ITicket {
         }
         return false;
     }
+
+    unbook(): boolean {
+        if (this.isBooked) {
+            this.isBooked = false;
+            return true;
+        }
+        return false;
+    }
 } 

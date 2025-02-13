@@ -69,4 +69,12 @@ export class TicketController {
             });
         }
     };
+
+    createTicket = async (req: Request, res: Response) => {
+        try {
+            const { ticketId, type, price } = req.body;
+        } catch (error) {
+            res.status(500).json({ message: 'Error creating ticket', error });
+        }
+    }
 } 

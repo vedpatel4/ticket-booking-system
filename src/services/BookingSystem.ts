@@ -3,6 +3,7 @@ import { BookingService } from './BookingService';
 import { Ticket } from '../models/Ticket';
 import { Booking } from '../models/Booking';
 import { ITicket } from '../interfaces/ITicket';
+import { TicketType } from '../enums/TicketType';
 
 interface TicketPrices {
     VIP: number;
@@ -11,6 +12,9 @@ interface TicketPrices {
 }
 
 export class BookingSystem {
+    deleteBooking(id: string) {
+        return this.bookingService.deleteBooking(id);
+    }
     private ticketService: TicketService;
     private bookingService: BookingService;
 
@@ -25,6 +29,14 @@ export class BookingSystem {
 
     async getAllTickets(): Promise<ITicket[]> {
         return this.ticketService.getAllTickets();
+    }
+
+    async createTicket(ticketId: string, type: TicketType, price: number): Promise<Ticket> {
+        return this.ticketService.createTicket(ticketId, type, price);
+    }
+
+    async getTicketById(ticketId: string): Promise<Ticket | null> {
+        return this.ticketService.getTicketById(ticketId);
     }
 
     async createTickets(

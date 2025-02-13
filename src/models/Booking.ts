@@ -45,4 +45,8 @@ Total Amount: $${this.totalAmount}
     getTotalAmount(): number {
         return this.totalAmount;
     }
+
+    getTickets(): ITicket[] {
+        return this.tickets;
+    }
 } 

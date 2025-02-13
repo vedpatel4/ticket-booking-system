@@ -13,5 +13,7 @@ router.get('/:id', bookingController.getBookingById);
 // POST create new booking
 router.post('/', bookingController.createBooking);
 
+// DELETE booking by ID
+router.delete('/:id', bookingController.deleteBooking);
 
 export const bookingRoutes = router; 

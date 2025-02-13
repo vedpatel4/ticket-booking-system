@@ -58,6 +58,10 @@ export class BookingService {
         return this.mapBooking(booking);
     }
 
+    async deleteBooking(bookingId: string): Promise<void> {
+        await BookingModel.deleteOne({ bookingId });
+    }
+
     private mapBooking(booking: any): Booking {
         const newBooking = new Booking(booking.bookingId, booking.customerName);
         booking.tickets.forEach((ticket: any) => {
