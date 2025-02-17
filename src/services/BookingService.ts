@@ -6,7 +6,7 @@ import { BookingModel } from '../models/schemas/BookingSchema';
 import { v4 as uuidv4 } from 'uuid';
 import mongoose from 'mongoose';
 import { setTimeout } from 'timers/promises';
-
+import redisClient from '../config/redisClient';
 export class BookingService {
     async createBooking(customerName: string, ticketId: string): Promise<Booking | null> {
         const session = await mongoose.startSession();
@@ -46,9 +46,21 @@ export class BookingService {
     }
 
     async getAllBookings(): Promise<Booking[]> {
+        const cacheKey = 'allBokings';
+        const cachedBookings = await redisClient.get(cacheKey);
+
+        if (cachedBookings) {
+            return JSON.parse(cachedBookings);
+        }
+
         const bookings = await BookingModel.find()
             .populate<{ tickets: Array<{ ticketId: string; type: string; price: number }> }>('tickets');
-        return this.mapBookings(bookings);
+        const mappedBookings = this.mapBookings(bookings);
+
+        await redisClient.set(cacheKey, JSON.stringify(mappedBookings), {
+            EX: 60 * 5 // 5 minutes
+        });
+        return mappedBookings;
     }
 
     async getBookingById(bookingId: string): Promise<Booking | null> {
